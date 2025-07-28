@@ -58,6 +58,7 @@ const pauseButton = document.getElementById('pauseButton');
 const difficultySelect = document.getElementById('difficulty');
 const playerScoreDisplay = document.getElementById('playerScore');
 const aiScoreDisplay = document.getElementById('aiScore');
+const fullscreenButton = document.getElementById("fullscreenButton");
 
 // DOM elements for Game Over Screen
 const gameOverScreen = document.getElementById('gameOverScreen');
@@ -298,6 +299,21 @@ function resetGame() {
         animationFrameId = null;
     }
     drawEverything();
+}
+
+// --- Fullscreen Functionality ---
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch((err) => {
+      console.log(`Error attempting to enable fullscreen: ${err.message}`);
+    });
+    if (fullscreenButton) fullscreenButton.textContent = "⛷";
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+    if (fullscreenButton) fullscreenButton.textContent = "⛶";
+  }
 }
 
 // --- Countdown Function ---
