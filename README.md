@@ -4,6 +4,8 @@ Relive the nostalgia of a retro classic! This project is a straightforward yet e
 
 ## ✨ Key Features
 
+.
+
 - **Player vs. AI:** Challenge a computer-controlled opponent that adapts to different skill levels.
 - **Adjustable Difficulty:** Choose between `Easy`, `Medium`, or `Hard` modes to control the AI's responsiveness and the ball's speed.
 - **🎨 Multi-Theme Support:** Choose from 4 stunning visual themes - Default, Neon Retro, Dark Mode, and Ocean Blue - with instant switching and theme persistence.
