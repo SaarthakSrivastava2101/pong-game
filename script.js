@@ -508,6 +508,8 @@ pauseButton.addEventListener('click', () => {
 // Adjust difficultySelect event listener to use gameState
 difficultySelect.addEventListener('change', (event) => {
     difficultyLevel = event.target.value;
+    // Immediately removes the focus from the select input so that the arrow up/down keys don't interfere with it
+    event.target.blur();
     resetGame();
     // Only start countdown if the game was actively playing or paused (not on welcome/game over)
     if (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.PAUSED) {
