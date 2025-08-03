@@ -54,8 +54,11 @@ const pauseButton = document.getElementById('pauseButton');
 const difficultySelect = document.getElementById('difficulty');
 const playerScoreDisplay = document.getElementById('playerScore');
 const aiScoreDisplay = document.getElementById('aiScore');
+const howToPlayButton = document.getElementById('howToPlayButton');
+const howToPlayModal = document.getElementById('howToPlayModal');
+const closeHowToPlay = document.getElementById('closeHowToPlay');
 
-// DOM elements for Game Over Screen
+// Game Over Screen elements
 const gameOverScreen = document.getElementById('gameOverScreen');
 const gameOverMessage = document.getElementById('gameOverMessage');
 const playAgainButton = document.getElementById('playAgainButton');
@@ -63,7 +66,7 @@ const playAgainButton = document.getElementById('playAgainButton');
 // Difficulty level variable
 let difficultyLevel = 'medium';
 
-// --- Difficulty Settings ---
+// Difficulty Settings
 const difficultySettings = {
     easy: {
         ballInitialSpeed: 5,
@@ -78,6 +81,11 @@ const difficultySettings = {
         aiPaddleSpeed: 7
     }
 };
+
+// Keyboard state
+let upArrowPressed = false;
+let downArrowPressed = false;
+const paddleMoveSpeed = 8;
 
 // --- Game Functions ---
 
@@ -121,29 +129,34 @@ function drawRoundedRect(ctx, x, y, width, height, radius) {
 }
 
 function drawEverything() {
+    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Draw paddles
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
     ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
     ctx.shadowBlur = 10;
     
+    // Player paddle
     ctx.beginPath();
     drawRoundedRect(ctx, 0, playerPaddleY, paddleWidth, paddleHeight, 5);
     ctx.fill();
     
+    // AI paddle
     ctx.beginPath();
     drawRoundedRect(ctx, canvas.width - paddleWidth, aiPaddleY, paddleWidth, paddleHeight, 5);
     ctx.fill();
 
+    // Draw ball
     ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
     ctx.shadowBlur = 15;
     ctx.beginPath();
     ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2, false);
     ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
     ctx.fill();
-    
     ctx.shadowBlur = 0;
 
+    // Draw center line
     ctx.setLineDash([5, 10]);
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
     ctx.lineWidth = 2;
@@ -153,6 +166,7 @@ function drawEverything() {
     ctx.stroke();
     ctx.setLineDash([]);
 
+    // Draw countdown if active
     if (countdownActive) {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
         ctx.font = '80px Segoe UI';
@@ -163,6 +177,7 @@ function drawEverything() {
         ctx.shadowBlur = 0;
     }
 
+    // Update score displays
     playerScoreDisplay.textContent = `${playerName}: ${playerScore}`;
     aiScoreDisplay.textContent = `AI: ${aiScore}`;
 }
@@ -170,19 +185,23 @@ function drawEverything() {
 function moveEverything() {
     if (gamePaused || countdownActive) return;
 
+    // Move ball
     ballX += ballSpeedX;
     ballY += ballSpeedY;
 
+    // Ball collision with top/bottom walls
     if (ballY + ballRadius > canvas.height || ballY - ballRadius < 0) {
         ballSpeedY = -ballSpeedY;
         playSound(wallHitSound);
     }
 
+    // Ball out of bounds - left side (AI scores)
     if (ballX < 0) {
         aiScore++;
         updateScoreDisplay();
         updateBackgroundBasedOnScore();
         playSound(scoreSound);
+        
         if (aiScore >= minimumWinningScore && (aiScore - playerScore >= scoreDifferenceToWin)) {
             gamePaused = true;
             playSound(gameOverSound);
@@ -196,11 +215,13 @@ function moveEverything() {
         }
     }
 
+    // Ball out of bounds - right side (Player scores)
     if (ballX > canvas.width) {
         playerScore++;
         updateScoreDisplay();
         updateBackgroundBasedOnScore();
         playSound(scoreSound);
+        
         if (playerScore >= minimumWinningScore && (playerScore - aiScore >= scoreDifferenceToWin)) {
             gamePaused = true;
             playSound(playerWinSound);
@@ -214,6 +235,7 @@ function moveEverything() {
         }
     }
 
+    // Ball collision with player paddle
     if (ballX - ballRadius < paddleWidth && ballY > playerPaddleY && ballY < playerPaddleY + paddleHeight) {
         ballSpeedX = -ballSpeedX;
         let deltaY = ballY - (playerPaddleY + paddleHeight / 2);
@@ -221,6 +243,7 @@ function moveEverything() {
         playSound(paddleHitSound);
     }
 
+    // Ball collision with AI paddle
     if (ballX + ballRadius > canvas.width - paddleWidth && ballY > aiPaddleY && ballY < aiPaddleY + paddleHeight) {
         ballSpeedX = -ballSpeedX;
         let deltaY = ballY - (aiPaddleY + paddleHeight / 2);
@@ -228,6 +251,7 @@ function moveEverything() {
         playSound(paddleHitSound);
     }
 
+    // AI paddle movement
     const aiCenter = aiPaddleY + (paddleHeight / 2);
     const aiSpeed = difficultySettings[difficultyLevel].aiPaddleSpeed;
 
@@ -237,9 +261,11 @@ function moveEverything() {
         aiPaddleY -= aiSpeed;
     }
 
+    // Keep AI paddle in bounds
     if (aiPaddleY < 0) aiPaddleY = 0;
     if (aiPaddleY + paddleHeight > canvas.height) aiPaddleY = canvas.height - paddleHeight;
 
+    // Handle keyboard controls
     keyboardPaddleControl();
 }
 
@@ -318,6 +344,33 @@ function startCountdown() {
     }, 3000);
 }
 
+function keyboardPaddleControl() {
+    if (upArrowPressed) playerPaddleY -= paddleMoveSpeed;
+    if (downArrowPressed) playerPaddleY += paddleMoveSpeed;
+    
+    // Keep player paddle in bounds
+    if (playerPaddleY < 0) playerPaddleY = 0;
+    if (playerPaddleY + paddleHeight > canvas.height) playerPaddleY = canvas.height - paddleHeight;
+}
+
+function handleTouchMove(event) {
+    let touchY = event.touches[0].clientY;
+    let canvasRect = canvas.getBoundingClientRect();
+    let relativeTouchY = touchY - canvasRect.top;
+
+    playerPaddleY = relativeTouchY - paddleHeight / 2;
+
+    // Keep paddle in bounds
+    if (playerPaddleY < 0) {
+        playerPaddleY = 0;
+    } else if (playerPaddleY + paddleHeight > canvas.height) {
+        playerPaddleY = canvas.height - paddleHeight;
+    }
+}
+
+// --- Event Listeners ---
+
+// Start game button
 startGameButton.addEventListener('click', () => {
     playerName = playerNameInput.value.trim();
     if (playerName === "") {
@@ -326,11 +379,11 @@ startGameButton.addEventListener('click', () => {
     welcomeScreen.style.display = 'none';
 
     startBackgroundMusicRotation();
-
     resetGame();
     startCountdown();
 });
 
+// Play again button
 playAgainButton.addEventListener('click', () => {
     gameOverScreen.style.display = 'none';
     resetGame();
@@ -338,6 +391,7 @@ playAgainButton.addEventListener('click', () => {
     startCountdown();
 });
 
+// Mouse movement for paddle control
 canvas.addEventListener('mousemove', (evt) => {
     if (gamePaused || countdownActive) return;
 
@@ -345,10 +399,12 @@ canvas.addEventListener('mousemove', (evt) => {
     let mousePos = evt.clientY - rect.top;
     playerPaddleY = mousePos - (paddleHeight / 2);
 
+    // Keep paddle in bounds
     if (playerPaddleY < 0) playerPaddleY = 0;
     if (playerPaddleY + paddleHeight > canvas.height) playerPaddleY = canvas.height - paddleHeight;
 });
 
+// Touch controls for mobile
 canvas.addEventListener('touchstart', function(event) {
     event.preventDefault();
     handleTouchMove(event);
@@ -359,20 +415,7 @@ canvas.addEventListener('touchmove', function(event) {
     handleTouchMove(event);
 }, { passive: false });
 
-function handleTouchMove(event) {
-    let touchY = event.touches[0].clientY;
-    let canvasRect = canvas.getBoundingClientRect();
-    let relativeTouchY = touchY - canvasRect.top;
-
-    playerPaddleY = relativeTouchY - paddleHeight / 2;
-
-    if (playerPaddleY < 0) {
-        playerPaddleY = 0;
-    } else if (playerPaddleY + paddleHeight > canvas.height) {
-        playerPaddleY = canvas.height - paddleHeight;
-    }
-}
-
+// Pause button
 pauseButton.addEventListener('click', () => {
     if (!countdownActive) {
         if (gamePaused) {
@@ -394,15 +437,14 @@ pauseButton.addEventListener('click', () => {
     }
 });
 
+// Difficulty selection
 difficultySelect.addEventListener('change', (event) => {
     difficultyLevel = event.target.value;
+    event.target.blur(); // Remove focus from select
     resetGame();
 });
 
-let upArrowPressed = false;
-let downArrowPressed = false;
-const paddleMoveSpeed = 8;
-
+// Keyboard controls
 document.addEventListener('keydown', function(e) {
     if (!gamePaused && !countdownActive) {
         if (e.key === "ArrowUp") upArrowPressed = true;
@@ -415,13 +457,30 @@ document.addEventListener('keyup', function(e) {
     if (e.key === "ArrowDown") downArrowPressed = false;
 });
 
-function keyboardPaddleControl() {
-    if (upArrowPressed) playerPaddleY -= paddleMoveSpeed;
-    if (downArrowPressed) playerPaddleY += paddleMoveSpeed;
-    if (playerPaddleY < 0) playerPaddleY = 0;
-    if (playerPaddleY + paddleHeight > canvas.height) playerPaddleY = canvas.height - paddleHeight;
+// How to Play modal
+if (howToPlayButton && howToPlayModal && closeHowToPlay) {
+    howToPlayButton.addEventListener('click', () => {
+        howToPlayModal.classList.remove('hidden');
+    });
+
+    closeHowToPlay.addEventListener('click', () => {
+        howToPlayModal.classList.add('hidden');
+    });
+
+    howToPlayModal.addEventListener('click', (e) => {
+        if (e.target === howToPlayModal) {
+            howToPlayModal.classList.add('hidden');
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !howToPlayModal.classList.contains('hidden')) {
+            howToPlayModal.classList.add('hidden');
+        }
+    });
 }
 
+// Initialize game
 document.addEventListener('DOMContentLoaded', () => {
     welcomeScreen.style.display = 'flex';
     gameOverScreen.style.display = 'none';
