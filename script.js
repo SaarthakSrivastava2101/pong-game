@@ -528,6 +528,8 @@ pauseButton.addEventListener('click', () => {
 // Adjust difficultySelect event listener to use gameState
 difficultySelect.addEventListener('change', (event) => {
     difficultyLevel = event.target.value;
+    // Immediately removes the focus from the select input so that the arrow up/down keys don't interfere with it
+    event.target.blur();
     resetGame();
     // Only start countdown if the game was actively playing or paused (not on welcome/game over)
     if (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.PAUSED) {
@@ -573,3 +575,49 @@ function keyboardPaddleControl() {
     if (playerPaddleY < 0) playerPaddleY = 0;
     if (playerPaddleY + paddleHeight > canvas.height) playerPaddleY = canvas.height - paddleHeight;
 }
+// Place this at the very end of script.js
+
+document.addEventListener("DOMContentLoaded", () => {
+    const howToPlayButton = document.getElementById('howToPlayButton');
+    const howToPlayModal = document.getElementById('howToPlayModal');
+    const closeHowToPlay = document.getElementById('closeHowToPlay');
+
+    if (howToPlayButton && howToPlayModal && closeHowToPlay) {
+        howToPlayButton.addEventListener('click', () => {
+            howToPlayModal.classList.remove('hidden');
+        });
+
+        closeHowToPlay.addEventListener('click', () => {
+            howToPlayModal.classList.add('hidden');
+        });
+
+        howToPlayModal.addEventListener('click', (e) => {
+            if (e.target === howToPlayModal) {
+                howToPlayModal.classList.add('hidden');
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                howToPlayModal.classList.add('hidden');
+            }
+        });
+    }
+
+    // ✅ Add your existing Play Game button logic here as well
+    const startGameButton = document.getElementById("startGameButton");
+    const welcomeScreen = document.getElementById("welcomeScreen");
+    const gameCanvas = document.getElementById("gameCanvas");
+
+    if (startGameButton && welcomeScreen && gameCanvas) {
+        startGameButton.addEventListener("click", () => {
+            welcomeScreen.style.display = "none";
+            gameCanvas.style.display = "block";
+            // Start game here...
+        });
+    }
+});
+howToPlayButton.addEventListener('click', () => {
+    console.log("Clicked How to Play!");
+    howToPlayModal.classList.remove('hidden');
+});
