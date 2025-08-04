@@ -12,6 +12,9 @@ import {
     backgroundMusicTracks
 } from './audio.js';
 
+// Import theme manager
+import themeManager from './theme.js';
+
 const canvas = document.getElementById('gameCanvas');
 if (!canvas) {
     throw new Error("Canvas element with ID 'gameCanvas' not found.");
@@ -132,9 +135,21 @@ function drawEverything() {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw paddles
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+    // Get current theme colors for dynamic rendering
+    const currentTheme = themeManager.getCurrentTheme();
+    const computedStyles = getComputedStyle(document.documentElement);
+    
+    // Dynamic paddle color based on theme
+    const paddleColor = computedStyles.getPropertyValue('--paddle-color').trim() || 'rgba(255, 255, 255, 0.9)';
+    const paddleGlow = computedStyles.getPropertyValue('--paddle-glow').trim() || 'rgba(255, 255, 255, 0.5)';
+    const ballColor = computedStyles.getPropertyValue('--ball-color').trim() || 'rgba(255, 255, 255, 0.95)';
+    const ballGlow = computedStyles.getPropertyValue('--ball-glow').trim() || 'rgba(255, 255, 255, 0.8)';
+    const centerLineColor = computedStyles.getPropertyValue('--center-line-color').trim() || 'rgba(255, 255, 255, 0.3)';
+
+    // Draw paddles with enhanced styling and rounded corners
+    ctx.fillStyle = paddleColor;
+    ctx.shadowColor = paddleGlow;
+
     ctx.shadowBlur = 10;
     
     // Player paddle
@@ -147,18 +162,19 @@ function drawEverything() {
     drawRoundedRect(ctx, canvas.width - paddleWidth, aiPaddleY, paddleWidth, paddleHeight, 5);
     ctx.fill();
 
-    // Draw ball
-    ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+    // Draw ball with glow effect
+    ctx.shadowColor = ballGlow;
+
     ctx.shadowBlur = 15;
     ctx.beginPath();
     ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2, false);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.fillStyle = ballColor;
     ctx.fill();
     ctx.shadowBlur = 0;
 
     // Draw center line
     ctx.setLineDash([5, 10]);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.strokeStyle = centerLineColor;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(canvas.width / 2, 0);
@@ -168,10 +184,10 @@ function drawEverything() {
 
     // Draw countdown if active
     if (countdownActive) {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.fillStyle = ballColor;
         ctx.font = '80px Segoe UI';
         ctx.textAlign = 'center';
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+        ctx.shadowColor = ballGlow;
         ctx.shadowBlur = 10;
         ctx.fillText(countdownValue === 0 ? "GO!" : countdownValue, canvas.width / 2, canvas.height / 2 + 30);
         ctx.shadowBlur = 0;
@@ -425,7 +441,84 @@ pauseButton.addEventListener('click', () => {
             if (!animationFrameId) {
                 gameLoop();
             }
-        } else {
+
+        } else { // If currently playing, user wants to pause
+            gamePaused = true;
+            pauseButton.textContent = "Resume";
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            stopBackgroundMusicRotation();
+        }
+    }
+});
+
+difficultySelect.addEventListener('change', (event) => {
+    difficultyLevel = event.target.value;
+    resetGame();
+    // If game was paused for difficulty change, restart countdown
+    if (gameState === GAME_STATES.PLAYING || gameState === GAME_STATES.PAUSED) {
+        startCountdown();
+    } else {
+        drawEverything();
+    }
+});
+
+// --- Initial Setup (Show Welcome Screen) ---
+// Define GAME_STATES enum outside, or ensure it's accessible.
+// For now, let's just make sure gameState is available.
+const GAME_STATES = {
+    WELCOME: 'WELCOME',
+    PLAYING: 'PLAYING',
+    PAUSED: 'PAUSED',
+    GAME_OVER: 'GAME_OVER'
+};
+let gameState = GAME_STATES.WELCOME; // Initialize game state
+
+// Listen for theme changes to update canvas rendering
+document.addEventListener('themeChanged', (event) => {
+    // Redraw canvas with new theme colors
+    drawEverything();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    welcomeScreen.style.display = 'flex'; // Show the welcome screen
+    gameOverScreen.style.display = 'none'; // Ensure game over screen is hidden initially
+
+    // Update playerPaddleY and aiPaddleY only after canvas dimensions are known
+    playerPaddleY = (canvas.height - paddleHeight) / 2;
+    aiPaddleY = (canvas.height - paddleHeight) / 2;
+    drawEverything(); // Draw initial state on canvas
+});
+
+// Minor adjustment in startGameButton to set gameState
+startGameButton.addEventListener('click', () => {
+    playerName = playerNameInput.value.trim();
+    if (playerName === "") {
+        playerName = "Player";
+    }
+    welcomeScreen.style.display = 'none';
+    gameState = GAME_STATES.PLAYING; // Set game state to playing
+    startBackgroundMusicRotation();
+    resetGame();
+    startCountdown();
+});
+
+// Minor adjustment in playAgainButton to set gameState
+playAgainButton.addEventListener('click', () => {
+    gameOverScreen.style.display = 'none';
+    gameState = GAME_STATES.PLAYING; // Set game state to playing
+    resetGame();
+    startBackgroundMusicRotation();
+    startCountdown();
+});
+
+// Minor adjustment in pauseButton to use gameState
+pauseButton.addEventListener('click', () => {
+    if (!countdownActive) {
+        if (gameState === GAME_STATES.PLAYING) {
+
             gamePaused = true;
             pauseButton.textContent = "Resume";
             if (animationFrameId) {
