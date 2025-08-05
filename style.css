@@ -154,6 +154,16 @@ h1 {
     -webkit-backdrop-filter: blur(15px);
 }
 
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+canvas {
+  display: block;
+  margin: 0 auto;
+}
+
 .game-controls select option {
     background: rgba(30, 30, 30, 0.95);
     color: white;
