@@ -4,11 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced Pong Game</title>
+    <link rel="icon" href="pong.jpeg" type="image/jpeg">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="themes.css">
 </head>
 <body>
     <div id="welcomeScreen" class="welcome-screen">
-        <h2>Welcome to Pong!</h2>
+        <h2>Welcome to Pong-Game!</h2>
         <input type="text" id="playerNameInput" placeholder="Enter your name (optional)" maxlength="15">
         <button id="startGameButton">Play Game</button>
         <button id="howToPlayButton">How to Play</button>
@@ -29,6 +31,15 @@
             <option value="medium" selected>Medium</option>
             <option value="hard">Hard</option>
         </select>
+<button id="fullscreenButton">⛶</button>
+
+<label for="themeSelector">Theme:</label>
+<select id="themeSelector">
+    <option value="default">Default</option>
+    <option value="neon-retro">Neon Retro</option>
+    <option value="dark-mode">Dark Mode</option>
+    <option value="ocean-blue">Ocean Blue</option>
+</select>
         <div class="score">
             <span id="playerScore">Player: 0</span> | <span id="aiScore">AI: 0</span>
         </div>

@@ -1,55 +1,43 @@
-// Import audio functions and elements from audio.js
-import {
-    playSound,
-    startBackgroundMusicRotation,
-    stopBackgroundMusicRotation,
-    paddleHitSound,
-    wallHitSound,
-    scoreSound,
-    gameOverSound,
-    playerWinSound,
-    countdownBeepSound,
-    backgroundMusicTracks
-} from './audio.js';
+window.addEventListener("DOMContentLoaded", () => {
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
 
-const canvas = document.getElementById('gameCanvas');
-// No console.error for missing canvas - fail silently or assume existence after DOMContentLoaded
-if (!canvas) {
-    throw new Error("Canvas element with ID 'gameCanvas' not found.");
-}
-const ctx = canvas.getContext('2d');
-// No console.error for missing context - fail silently or assume existence
-if (!ctx) {
-    throw new Error("2D rendering context for canvas not available.");
-}
+    // --- Game variables ---
+    let gameRunning = false;
+    let paused = false;
+    let playerScore = 0;
+    let aiScore = 0;
+    let difficulty = "medium";
 
-// Game state variables
-let ballX;
-let ballY;
-let ballSpeedX = 0;
-let ballSpeedY = 0;
-const ballRadius = 10;
+    // --- Paddle settings ---
+    const paddleHeight = 80;
+    const paddleWidth = 10;
+    const player = { x: 10, y: canvas.height / 2 - paddleHeight / 2, dy: 6 };
+    const ai = { x: canvas.width - 20, y: canvas.height / 2 - paddleHeight / 2, dy: 5 };
 
-const paddleWidth = 10;
-const paddleHeight = 100;
-let playerPaddleY;
-let aiPaddleY;
+    // --- Ball settings ---
+    const ball = { x: canvas.width / 2, y: canvas.height / 2, r: 8, dx: 4, dy: 4 };
 
-let playerScore = 0;
-let aiScore = 0;
-const minimumWinningScore = 3;
-const scoreDifferenceToWin = 2;
+    // --- Difficulty mapping ---
+    const speeds = {
+        easy: 3,
+        medium: 5,
+        hard: 7
+    };
 
-let gamePaused = true;
-let animationFrameId = null;
-let countdownActive = false;
-let countdownValue = 3;
+    // --- Draw everything ---
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-// Global variable to store the countdown interval ID
-let countdownIntervalId = null;
+        // Background
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-let playerName = "Player";
+        // Player paddle
+        ctx.fillStyle = "white";
+        ctx.fillRect(player.x, player.y, paddleWidth, paddleHeight);
 
+<<<<<<< HEAD
 // DOM elements
 const welcomeScreen = document.getElementById('welcomeScreen');
 const startGameButton = document.getElementById('startGameButton');
@@ -59,270 +47,94 @@ const restartButton = document.getElementById('restartButton');
 const difficultySelect = document.getElementById('difficulty');
 const playerScoreDisplay = document.getElementById('playerScore');
 const aiScoreDisplay = document.getElementById('aiScore');
+=======
+        // AI paddle
+        ctx.fillRect(ai.x, ai.y, paddleWidth, paddleHeight);
+>>>>>>> 7547b8de8c0d6d577416bcd8d803f1ede4138497
 
-// DOM elements for Game Over Screen
-const gameOverScreen = document.getElementById('gameOverScreen');
-const gameOverMessage = document.getElementById('gameOverMessage');
-const playAgainButton = document.getElementById('playAgainButton');
-
-// Difficulty level variable
-let difficultyLevel = 'medium';
-
-// --- Difficulty Settings ---
-const difficultySettings = {
-    easy: {
-        ballInitialSpeed: 5,
-        aiPaddleSpeed: 3
-    },
-    medium: {
-        ballInitialSpeed: 6,
-        aiPaddleSpeed: 5
-    },
-    hard: {
-        ballInitialSpeed: 7,
-        aiPaddleSpeed: 7
-    }
-};
-
-// --- Game Functions ---
-
-function resetBall() {
-    ballX = canvas.width / 2;
-    ballY = canvas.height / 2;
-    const currentSettings = difficultySettings[difficultyLevel];
-    ballSpeedX = (Math.random() > 0.5 ? 1 : -1) * currentSettings.ballInitialSpeed;
-    ballSpeedY = (Math.random() * 2 - 1) * currentSettings.ballInitialSpeed;
-}
-
-// Helper function for rounded rectangles (fallback for older browsers)
-function drawRoundedRect(ctx, x, y, width, height, radius) {
-    if (typeof ctx.roundRect === 'function') {
-        ctx.roundRect(x, y, width, height, radius);
-    } else {
+        // Ball
         ctx.beginPath();
-        ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + width - radius, y);
-        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-        ctx.lineTo(x + width, y + height - radius);
-        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-        ctx.lineTo(x + radius, y + height);
-        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-        ctx.lineTo(x, y + radius);
-        ctx.quadraticCurveTo(x, y, x + radius, y);
-        ctx.closePath();
-    }
-}
+        ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+        ctx.fill();
 
-function drawEverything() {
-    // Clear the canvas - let CSS gradient show through
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Net
+        for (let i = 0; i < canvas.height; i += 20) {
+            ctx.fillRect(canvas.width / 2 - 1, i, 2, 10);
+        }
 
-    // Draw paddles with enhanced styling and rounded corners
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
-    ctx.shadowBlur = 10;
-    
-    // Draw player paddle with rounded corners
-    ctx.beginPath();
-    drawRoundedRect(ctx, 0, playerPaddleY, paddleWidth, paddleHeight, 5);
-    ctx.fill();
-    
-    // Draw AI paddle with rounded corners
-    ctx.beginPath();
-    drawRoundedRect(ctx, canvas.width - paddleWidth, aiPaddleY, paddleWidth, paddleHeight, 5);
-    ctx.fill();
-
-    // Draw ball with glow effect
-    ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-    ctx.shadowBlur = 15;
-    ctx.beginPath();
-    ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2, false);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-    ctx.fill();
-    
-    // Reset shadow for text
-    ctx.shadowBlur = 0;
-
-    // Draw center line with modern styling
-    ctx.setLineDash([5, 10]);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(canvas.width / 2, 0);
-    ctx.lineTo(canvas.width / 2, canvas.height);
-    ctx.stroke();
-    ctx.setLineDash([]); // Reset line dash
-
-    // Draw countdown number ONLY if active
-    if (countdownActive) {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.font = '80px Segoe UI';
-        ctx.textAlign = 'center';
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
-        ctx.shadowBlur = 10;
-        // Display countdownValue, which will update from 3 down to 0 visually
-        ctx.fillText(countdownValue === 0 ? "GO!" : countdownValue, canvas.width / 2, canvas.height / 2 + 30);
-        ctx.shadowBlur = 0;
+        // Score
+        ctx.fillStyle = "white";
+        ctx.font = "20px Arial";
+        ctx.fillText(`Player: ${playerScore}`, 50, 30);
+        ctx.fillText(`AI: ${aiScore}`, canvas.width - 150, 30);
     }
 
-    // Update score display with player name
-    playerScoreDisplay.textContent = `${playerName}: ${playerScore}`;
-    aiScoreDisplay.textContent = `AI: ${aiScore}`;
-}
-
-function moveEverything() {
-    // Crucial check: Stop movement if game is paused or during countdown
-    if (gamePaused || countdownActive) return;
-
-    ballX += ballSpeedX;
-    ballY += ballSpeedY;
-
-    // Wall collision
-    if (ballY + ballRadius > canvas.height || ballY - ballRadius < 0) {
-        ballSpeedY = -ballSpeedY;
-        playSound(wallHitSound);
+    // --- Reset ball ---
+    function resetBall() {
+        ball.x = canvas.width / 2;
+        ball.y = canvas.height / 2;
+        ball.dx *= -1; // change direction
     }
 
-    // --- Scoring Logic ---
-    // Check if ball goes off screen to the left (AI scores)
-    if (ballX < 0) {
-        aiScore++;
-        updateScoreDisplay();
-        playSound(scoreSound);
-        // Check for AI win condition
-        if (aiScore >= minimumWinningScore && (aiScore - playerScore >= scoreDifferenceToWin)) {
-            gamePaused = true;
-            playSound(gameOverSound);
-            setTimeout(() => {
-                endGame("AI Wins!");
-            }, 500);
-        } else {
-            gamePaused = true;
+    // --- Update game state ---
+    function update() {
+        ball.x += ball.dx;
+        ball.y += ball.dy;
+
+        // Bounce top/bottom
+        if (ball.y - ball.r < 0 || ball.y + ball.r > canvas.height) {
+            ball.dy *= -1;
+        }
+
+        // Player collision
+        if (
+            ball.x - ball.r < player.x + paddleWidth &&
+            ball.y > player.y &&
+            ball.y < player.y + paddleHeight
+        ) {
+            ball.dx *= -1;
+        }
+
+        // AI collision
+        if (
+            ball.x + ball.r > ai.x &&
+            ball.y > ai.y &&
+            ball.y < ai.y + paddleHeight
+        ) {
+            ball.dx *= -1;
+        }
+
+        // Scoring
+        if (ball.x - ball.r < 0) {
+            aiScore++;
             resetBall();
-            startCountdown();
-        }
-    }
-
-    // Check if ball goes off screen to the right (Player scores)
-    if (ballX > canvas.width) {
-        playerScore++;
-        updateScoreDisplay();
-        playSound(scoreSound);
-        // Check for Player win condition
-        if (playerScore >= minimumWinningScore && (playerScore - aiScore >= scoreDifferenceToWin)) {
-            gamePaused = true;
-            playSound(playerWinSound);
-            setTimeout(() => {
-                endGame(`${playerName} Wins!`);
-            }, 500);
-        } else {
-            gamePaused = true;
+        } else if (ball.x + ball.r > canvas.width) {
+            playerScore++;
             resetBall();
-            startCountdown();
+        }
+
+        // AI movement
+        let aiCenter = ai.y + paddleHeight / 2;
+        if (ball.y < aiCenter) ai.y -= speeds[difficulty];
+        else if (ball.y > aiCenter) ai.y += speeds[difficulty];
+
+        // Boundaries
+        player.y = Math.max(Math.min(player.y, canvas.height - paddleHeight), 0);
+        ai.y = Math.max(Math.min(ai.y, canvas.height - paddleHeight), 0);
+
+        // Check Game Over
+        if ((playerScore >= 3 || aiScore >= 3) && Math.abs(playerScore - aiScore) >= 2) {
+            endGame();
         }
     }
 
-    // --- Paddle Collision Logic ---
-    // Player paddle collision
-    if (ballX - ballRadius < paddleWidth && ballY > playerPaddleY && ballY < playerPaddleY + paddleHeight) {
-        ballSpeedX = -ballSpeedX;
-        let deltaY = ballY - (playerPaddleY + paddleHeight / 2);
-        ballSpeedY = deltaY * 0.35;
-        playSound(paddleHitSound);
-    }
-
-    // AI paddle collision
-    if (ballX + ballRadius > canvas.width - paddleWidth && ballY > aiPaddleY && ballY < aiPaddleY + paddleHeight) {
-        ballSpeedX = -ballSpeedX;
-        let deltaY = ballY - (aiPaddleY + paddleHeight / 2);
-        ballSpeedY = deltaY * 0.35;
-        playSound(paddleHitSound);
-    }
-
-    // AI Paddle Movement Logic
-    const aiCenter = aiPaddleY + (paddleHeight / 2);
-    const aiSpeed = difficultySettings[difficultyLevel].aiPaddleSpeed;
-
-    if (aiCenter < ballY - 35) {
-        aiPaddleY += aiSpeed;
-    } else if (aiCenter > ballY + 35) {
-        aiPaddleY -= aiSpeed;
-    }
-
-    // Keep AI paddle within canvas bounds
-    if (aiPaddleY < 0) aiPaddleY = 0;
-    if (aiPaddleY + paddleHeight > canvas.height) aiPaddleY = canvas.height - paddleHeight;
-
-    keyboardPaddleControl();
-
-}
-
-function gameLoop() {
-    moveEverything();
-    drawEverything();
-    animationFrameId = requestAnimationFrame(gameLoop);
-}
-
-function updateScoreDisplay() {
-    playerScoreDisplay.textContent = `${playerName}: ${playerScore}`;
-    aiScoreDisplay.textContent = `AI: ${aiScore}`;
-}
-
-// Function to handle game over logic (now waits for permission to restart)
-function endGame(message) {
-    if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-    }
-    gamePaused = true;
-    stopBackgroundMusicRotation();
-
-    gameOverMessage.textContent = message;
-    gameOverScreen.style.display = 'flex';
-}
-
-function resetGame() {
-    playerScore = 0;
-    aiScore = 0;
-    updateScoreDisplay();
-
-    playerPaddleY = (canvas.height - paddleHeight) / 2;
-    aiPaddleY = (canvas.height - paddleHeight) / 2;
-
-    resetBall();
-
-    gamePaused = true;
-    pauseButton.textContent = "Resume";
-
-    if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-    }
-    drawEverything();
-}
-
-// --- Countdown Function ---
-function startCountdown() {
-    // Clear any existing countdown interval to prevent overlaps
-    if (countdownIntervalId) {
-        clearInterval(countdownIntervalId);
-        countdownIntervalId = null;
-    }
-
-    countdownActive = true;
-    countdownValue = 3;
-    drawEverything(); // Draw initial 3
-
-    playSound(countdownBeepSound);
-
-    // Assign interval ID to the global variable
-    countdownIntervalId = setInterval(() => {
-        countdownValue--;
-        drawEverything(); // Draw updated number
-        if (countdownValue < 0) {
-            clearInterval(countdownIntervalId);
-            countdownIntervalId = null;
+    // --- Main loop ---
+    function gameLoop() {
+        if (gameRunning && !paused) {
+            update();
+            draw();
         }
+<<<<<<< HEAD
     }, 1000);
 
     // This setTimeout runs after 3 seconds (for 3, 2, 1, GO! sequence)
@@ -602,22 +414,48 @@ document.addEventListener("DOMContentLoaded", () => {
                 howToPlayModal.classList.add('hidden');
             }
         });
+=======
+        requestAnimationFrame(gameLoop);
+>>>>>>> 7547b8de8c0d6d577416bcd8d803f1ede4138497
     }
 
-    // ✅ Add your existing Play Game button logic here as well
-    const startGameButton = document.getElementById("startGameButton");
-    const welcomeScreen = document.getElementById("welcomeScreen");
-    const gameCanvas = document.getElementById("gameCanvas");
-
-    if (startGameButton && welcomeScreen && gameCanvas) {
-        startGameButton.addEventListener("click", () => {
-            welcomeScreen.style.display = "none";
-            gameCanvas.style.display = "block";
-            // Start game here...
-        });
+    // --- Start Game ---
+    function startGame() {
+        gameRunning = true;
+        paused = false;
+        playerScore = 0;
+        aiScore = 0;
+        resetBall();
+        document.getElementById("welcomeScreen").style.display = "none";
+        document.getElementById("gameOverScreen").style.display = "none";
     }
-});
-howToPlayButton.addEventListener('click', () => {
-    console.log("Clicked How to Play!");
-    howToPlayModal.classList.remove('hidden');
+
+    // --- End Game ---
+    function endGame() {
+        gameRunning = false;
+        document.getElementById("gameOverMessage").textContent =
+            playerScore > aiScore ? "🎉 You Win!" : "😢 AI Wins!";
+        document.getElementById("gameOverScreen").style.display = "block";
+    }
+
+    // --- Controls ---
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowUp") player.y -= player.dy;
+        if (e.key === "ArrowDown") player.y += player.dy;
+    });
+
+    document.getElementById("pauseButton").addEventListener("click", () => {
+        paused = !paused;
+        document.getElementById("pauseButton").textContent = paused ? "Resume" : "Pause";
+    });
+
+    document.getElementById("difficulty").addEventListener("change", (e) => {
+        difficulty = e.target.value;
+    });
+
+    document.getElementById("startGameButton").addEventListener("click", startGame);
+    document.getElementById("playAgainButton").addEventListener("click", startGame);
+
+    // --- Kick off loop ---
+    requestAnimationFrame(gameLoop);
 });
