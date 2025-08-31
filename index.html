@@ -38,6 +38,23 @@
         <input type="text" id="playerNameInput" placeholder="Enter your name" maxlength="20">
         <button id="startGameButton">🎮 Play Game</button>
         <button id="howToPlayButton">🎮 How to Play</button>
+
+        <!-- Profile Preview (moved inside welcome-screen) -->
+        <div id="profilePreview" class="profile-preview hidden">
+          <span id="profileAvatar" class="profile-avatar">😎</span>
+          <span id="profileName" class="profile-name"></span>
+        </div>
+
+        <!-- Pong animation (moved inside welcome-screen) -->
+        <div class="pong-animation">
+          <svg class="pong-ball" viewBox="0 0 28 28">
+            <circle cx="14" cy="14" r="12" fill="#4cc9f0" stroke="#fff" stroke-width="3"/>
+          </svg>
+          <svg class="pong-paddle" viewBox="0 0 80 28">
+            <ellipse cx="56" cy="14" rx="22" ry="10" fill="#26c6da" stroke="#f72585" stroke-width="4"/>
+            <rect x="8" y="8" width="32" height="12" rx="6" fill="#f9a825" stroke="#23243a" stroke-width="3"/>
+          </svg>
+        </div>
     </div>
 
     <div id="gameOverScreen" class="game-over-screen">
@@ -94,12 +111,6 @@
             </ul>
             <button id="closeHowToPlayBtn">Close</button>
         </div>
-    </div>
-
-    <!-- Profile Preview (add below avatar picker and name input) -->
-    <div id="profilePreview" class="profile-preview hidden">
-      <span id="profileAvatar" class="profile-avatar">😎</span>
-      <span id="profileName" class="profile-name"></span>
     </div>
 
     <script src="script.js"></script>

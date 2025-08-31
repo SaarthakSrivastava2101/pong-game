@@ -601,4 +601,47 @@ label[for="themeSelector"]:hover {
     text-fill-color: transparent;
 }
 
+/* Ping pong ball and paddle SVG animation for welcome screen */
+.welcome-screen .pong-animation {
+    position: absolute;
+    bottom: 40px;
+    right: 60px;
+    width: 120px;
+    height: 80px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.welcome-screen .pong-ball {
+    position: absolute;
+    left: 70px;
+    top: 18px;
+    width: 28px;
+    height: 28px;
+    animation: pongBallBounce 1.2s cubic-bezier(.5,1.5,.5,1) infinite;
+}
+
+.welcome-screen .pong-paddle {
+    position: absolute;
+    left: 10px;
+    top: 38px;
+    width: 80px;
+    height: 28px;
+    animation: pongPaddleMove 1.2s cubic-bezier(.5,1.5,.5,1) infinite;
+}
+
+@keyframes pongBallBounce {
+    0%   { transform: translateY(0) scale(1); }
+    40%  { transform: translateY(-32px) scale(1.1); }
+    60%  { transform: translateY(-32px) scale(1.1); }
+    100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes pongPaddleMove {
+    0%   { transform: rotate(-8deg) scale(1); }
+    40%  { transform: rotate(8deg) scale(1.05); }
+    60%  { transform: rotate(8deg) scale(1.05); }
+    100% { transform: rotate(-8deg) scale(1); }
+}
+
 /* Add any other needed styles below... */
